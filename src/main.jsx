@@ -4,9 +4,12 @@ import App from './App.jsx'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import '../src/assets/style.scss'
 import './index.css'
+import { AuthProvider } from './components/context/Auth.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+     <AuthProvider>
+        <App />
+     </AuthProvider>
   </StrictMode>,
 )

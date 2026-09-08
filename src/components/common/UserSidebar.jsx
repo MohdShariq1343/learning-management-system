@@ -1,9 +1,11 @@
-import React from 'react'
+import React, { useContext } from 'react'
 import { FaChartBar, FaDesktop, FaUserLock   } from "react-icons/fa";
 import { BsMortarboardFill } from "react-icons/bs";
 import { MdLogout } from "react-icons/md";
 import { Link } from 'react-router-dom';
+import { AuthContext } from '../context/Auth';
 const UserSidebar = () => {
+    const {logout} = useContext(AuthContext);
   return (
     <div className='card border-0 shadow-lg'>
         <div className='card-body  p-4'>
@@ -22,7 +24,7 @@ const UserSidebar = () => {
                     <Link href="#"><FaUserLock  size={16}  className='me-2'/> Change Password</Link>
                 </li>
                 <li>
-                    <Link to="/login" className='text-danger'><MdLogout  size={16} className='me-2'/> Logout</Link>
+                    <Link onClick={logout} className='text-danger'><MdLogout  size={16} className='me-2'/> Logout</Link>
                 </li>
             </ul>
         </div>                             
