@@ -3,12 +3,13 @@ import { Link } from 'react-router-dom'
 import Header from './Header'
 import Footer from './Footer'
 import UserSidebar from './UserSidebar'
+import Layout from './common/Layout'
 
 const Dashboard = () => {
 	
   return (
-    <>
-        <Header/>
+
+        <Layout>
       	<section className='section-4'>
              <div className='container pb-5 pt-3'>
 				<nav aria-label="breadcrumb">
@@ -67,8 +68,8 @@ const Dashboard = () => {
                 </div>
             </div>
         </section>
-        <Footer/>
-    </>
+       
+    </Layout>
   )
 }
 

@@ -1,15 +1,13 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import Header from '../../common/Header'
-import Footer from '../../common/Footer'
 import UserSidebar from '../../common/UserSidebar'
-import EditCourse from '../../common/EditCourse'
+import EditCourse from './courses/EditCourse'
+import Layout from '../../common/Layout'
 
 const MyCourses = () => {
   return (
-    <>
-        <Header/>
-            <section className='section-4'>
+    <Layout>
+     <section className='section-4'>
                 <div className='container'>
                     <div className='row'>
                         <div className='col-md-12 mt-5 mb-3'>
@@ -31,8 +29,7 @@ const MyCourses = () => {
                     </div>
                 </div>
             </section>
-        <Footer/>
-    </>
+            </Layout>
   )
 }
 

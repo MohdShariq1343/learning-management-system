@@ -3,7 +3,7 @@ import { createContext, useState } from "react";
 export const AuthContext = createContext();
 
 export const AuthProvider = ({children}) => {
-  const userInfo = localStorage.getItem('userinfoLms');
+  const userInfo = localStorage.getItem('userInfoLms');
   const  [user, setUser] = useState(userInfo)
 
   const login = (user) => {
@@ -11,7 +11,7 @@ export const AuthProvider = ({children}) => {
   }
 
   const logout =  () =>  {
-    localStorage.removeItem('userinfoLms');
+    localStorage.removeItem('userInfoLms');
     setUser(null);
   }
 

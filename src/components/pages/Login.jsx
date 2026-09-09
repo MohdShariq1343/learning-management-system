@@ -32,7 +32,7 @@ const { register, handleSubmit, setError, formState: { errors } } = useForm();
                       id:result.id,
                       token:result.token,
                 }
-             localStorage.setItem('userinfoLms', JSON.stringify(userinfo));
+             localStorage.setItem('userInfoLms', JSON.stringify(userinfo));
                login(userinfo);
                 navigate('/account/dashboard');
 
