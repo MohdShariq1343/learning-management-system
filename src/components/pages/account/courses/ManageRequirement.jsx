@@ -7,6 +7,7 @@ import { MdDragIndicator } from 'react-icons/md';
 import { BsPencilSquare } from 'react-icons/bs';
 import { FaTrashAlt } from 'react-icons/fa';
 import Updaterequirement from './Updaterequirement';
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 const ManageRequirement = () => {
     const params = useParams();
@@ -108,6 +109,42 @@ const deleteRequirement = async (id) => {
     }
 }
 
+const handleDragEnd = (result) => {
+    if (!result.destination) return;
+
+    const reorderedItems = Array.from(requirements);
+    const [movedItem] = reorderedItems.splice(result.source.index, 1);
+    reorderedItems.splice(result.destination.index, 0, movedItem);
+
+    setRequirements(reorderedItems);
+    saveOrder(reorderedItems);
+};
+
+const saveOrder = async (updatedrequirements) =>{
+//    console.log(updatedoutcomes);
+   await fetch(`${apiUrl}/sort-requirements`,  {
+        method : "POST",
+        headers : {
+        "Content-type" :  "application/json",
+        "Accept" :  "application/json",
+        "Authorization" : `Bearer ${token}`,
+        },
+        body : JSON.stringify({requirements:updatedrequirements})
+       })
+        .then(res =>  res.json())
+        .then(result =>  {
+            if(result.status == 200){
+                // const newoutcomes = [...outcomes, result.data];
+                // setOutcomes(newoutcomes);
+            toast.success(result.message);
+            reset();
+         }else{
+             console.log(result)
+             
+            }
+})
+}
+
  useEffect( () => {
      fetchRequirement()
  },[])
@@ -138,12 +175,24 @@ const deleteRequirement = async (id) => {
         
         </form>
 
-        
-        {
-    requirements && requirements.map(requirement => {
-        return(
-           <div key={`outcome-${requirement.id}`} className="card mb-1 shadow">
-        <div className="card-body p-2">
+<DragDropContext onDragEnd={handleDragEnd} >
+    <Droppable droppableId="list">
+        {(provided) => (
+            <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                {
+                requirements.map((requirement, index) => (
+                        <Draggable key={requirement.id} draggableId={`${requirement.id}`} index={index}>
+
+                        {(provided) => (
+                            <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className="mt-2  py-0 px-0 bg-white shadow-lg  rounded"
+                            >
+
+                                <div key={`outcome-${requirement.id}`} className="card mb-1 ">
+        <div className="card-body py-2">
             <div className='d-flex  align-items-center justify-content-between'>
                 <span><MdDragIndicator/></span>
                  <h6 className='mb-0'>{requirement.text}</h6>
@@ -154,9 +203,17 @@ const deleteRequirement = async (id) => {
             </div>
         </div>
        </div>
-        )
-    })
-   }
+                            </div>
+                        )}
+                    </Draggable>
+                ))}
+                {provided.placeholder}
+            </div>
+        )}
+    </Droppable>
+</DragDropContext> 
+        
+       
         </div>
         </div>
 
