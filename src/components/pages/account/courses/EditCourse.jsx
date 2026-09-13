@@ -7,10 +7,12 @@ import { apiUrl, token } from '../../../common/Config'
 import toast from 'react-hot-toast/headless'
 import ManageOutcome from './ManageOutcome'
 import ManageRequirement from './ManageRequirement'
+import EditCover from './EditCover'
 
 const EditCourse = () => {
 const params = useParams();
 const [loading, setLoading] = useState(false);
+const [course, setCourse] = useState([]);
 
 const { register, handleSubmit, setError, formState: { errors }, reset } = useForm({
 defaultValues : async () => {
@@ -35,6 +37,7 @@ defaultValues : async () => {
                 sell_price : result.data.price,
                 cross_price : result.data.cross_price,
             })
+            setCourse(result.data);
         // toast.success(result.message);
         // navigate(`/account/courses/${result.data.id}`);
     }else{
@@ -267,6 +270,10 @@ return (
                     <div className="col-md-5">
                        <ManageOutcome/>
                        <ManageRequirement/>
+                       <EditCover 
+                         course={course}
+                         setCourse={setCourse}
+                       />
                     </div>
             </div>
         </div>

@@ -4,6 +4,7 @@ import UserSidebar from '../../../common/UserSidebar'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { apiUrl, token } from '../../../common/Config'
+import toast from 'react-hot-toast'
 
 const CreateCourse = () => {
     const { register, handleSubmit, setError, formState: { errors } } = useForm();

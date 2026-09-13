@@ -1,0 +1,146 @@
+/******************* Email Pattern *********************************/
+{
+    ...register('email',{
+        required: "The email field is required",
+        pattern: {
+            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+            message: "Invalid email address"
+        } 
+    })
+}
+/************************************************************/
+
+/******************* Sortable *********************************/
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+const [data,setData] = useState([]);
+
+const handleDragEnd = (result) => {
+    if (!result.destination) return;
+
+    const reorderedItems = Array.from(data);
+    const [movedItem] = reorderedItems.splice(result.source.index, 1);
+    reorderedItems.splice(result.destination.index, 0, movedItem);
+
+    setData(reorderedItems);
+    saveOrder(reorderedItems);
+};
+
+<DragDropContext onDragEnd={handleDragEnd} >
+    <Droppable droppableId="list">
+        {(provided) => (
+            <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                {
+                data.map((item, index) => (
+                        <Draggable key={item.id} draggableId={`${item.id}`} index={index}>
+
+                        {(provided) => (
+                            <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className="mt-2 border px-3 py-2 bg-white shadow-lg  rounded"
+                            >
+
+                                [CONTENT]
+                            </div>
+                        )}
+                    </Draggable>
+                ))}
+                {provided.placeholder}
+            </div>
+        )}
+    </Droppable>
+</DragDropContext> 
+
+/******************* Filepond *********************************/
+
+import { FilePond, registerPlugin } from 'react-filepond'
+import 'filepond/dist/filepond.min.css'
+import FilePondPluginImageExifOrientation from 'filepond-plugin-image-exif-orientation'
+import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
+import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';
+import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css'
+registerPlugin(FilePondPluginImageExifOrientation, FilePondPluginImagePreview,FilePondPluginFileValidateType)
+
+
+<FilePond
+    acceptedFileTypes={['image/jpeg', 'image/jpg', 'image/png']}
+    credits={false} 
+    files={files}
+    onupdatefiles={setFiles}
+    allowMultiple={false}
+    maxFiles={1}
+    server={{
+        process: {
+            url: `${apiUrl}/courses/save-course-image/${course.id}`,
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}` 
+            },
+            onload: (response) => {
+                response = JSON.parse(response);
+                toast.success(response.message);
+                const updateCourseData = { ...course, cover_image_small: response.data.cover_image_small};
+                setCourse(updateCourseData)
+                setFiles([]);
+            },
+            onerror: (errors) => {
+                console.log(errors)
+            },
+        },
+    }}
+    name="image"
+    labelIdle='Drag & Drop your files or <span class="filepond--label-action">Browse</span>'
+/>
+
+/******************* PHP *********************************/
+function convertMinutesToHours($minutes) {
+    $hours = floor($minutes / 60);
+    $remainingMinutes = $minutes % 60;
+
+    if ($hours > 0) {
+        $hString = ($hours == 1) ? "hr" : "hrs";
+        $mString = ($remainingMinutes == 1) ? "min" : "mins";
+
+        if ($hours > 0) {
+            if ($remainingMinutes > 0) {
+                return "{$hours} {$hString} {$remainingMinutes} {$mString}";
+            } else {
+                return "{$hours} {$hString}";
+            }
+        }
+
+    } else {
+        if ($remainingMinutes > 0) {
+            $mString = ($remainingMinutes == 1) ? "min" : "mins";
+            return "{$remainingMinutes} {$mString}";
+        }
+        
+    }
+    
+}
+
+/******************* JS *********************************/
+export function convertMinutesToHours(minutes) {
+    let hours = Math.floor(minutes / 60);
+    let remainingMinutes = minutes % 60;
+
+    if (hours > 0) {
+        let hString = hours === 1 ? "hr" : "hrs";
+        let mString = remainingMinutes === 1 ? "min" : "mins";
+
+        if (remainingMinutes > 0) {
+            return `${hours} ${hString} ${remainingMinutes} ${mString}`;
+        } else {
+            return `${hours} ${hString}`;
+        }
+    } else {
+        if (remainingMinutes > 0) {
+            let mString = remainingMinutes === 1 ? "min" : "mins";
+            return `${remainingMinutes} ${mString}`;
+        }
+    }
+
+    return "0 min";
+}
+
