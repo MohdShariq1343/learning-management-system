@@ -8,6 +8,7 @@ import toast from 'react-hot-toast/headless'
 import ManageOutcome from './ManageOutcome'
 import ManageRequirement from './ManageRequirement'
 import EditCover from './EditCover'
+import ManageChapter from './ManageChapter'
 
 const EditCourse = () => {
 const params = useParams();
@@ -265,6 +266,12 @@ return (
                             </div>
                         </div>
                 </form>
+                <div className="mt-3">
+                    <ManageChapter
+                      course={course}
+                      params={params}
+                    />
+                </div>
                     </div>
 
                     <div className="col-md-5">
