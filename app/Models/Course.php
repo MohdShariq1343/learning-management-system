@@ -18,4 +18,6 @@ class Course extends Model
 		return  $this->hasMany(Chapter::class);
 	}
 
+	
+
 }

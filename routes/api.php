@@ -7,6 +7,7 @@ use App\Http\Controllers\Front\CourseController;
 use App\Http\Controllers\Front\OutcomeController;
 use App\Http\Controllers\Front\RequirementController;
 use App\Http\Controllers\Front\ChapterController;
+use App\Http\Controllers\Front\Lessoncontroller;
 
 
 Route::post('/register', [AccountController::class, 'register']);
@@ -46,4 +47,12 @@ Route::group(['middleware'=> ['auth:sanctum']], function(){
    Route::put('/chapters/{id}', [ChapterController::class, 'update']);
    Route::delete('/chapters/{id}', [ChapterController::class, 'destroy']);
    Route::post('/sort-chapters', [ChapterController::class, 'sort_order']);
+
+     //Lesson
+   Route::get('/lessons', [Lessoncontroller::class, 'index']);
+   Route::get('/lessons/{id}', [Lessoncontroller::class, 'show']);
+   Route::post('/lessons', [Lessoncontroller::class, 'store']);
+   Route::put('/lessons/{id}', [Lessoncontroller::class, 'update']);
+   Route::delete('/lessons/{id}', [Lessoncontroller::class, 'destroy']);
+   Route::post('/sort-lessons', [Lessoncontroller::class, 'sort_order']);
 });
