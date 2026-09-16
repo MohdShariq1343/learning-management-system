@@ -1,15 +1,23 @@
 import React, { useEffect, useReducer, useState } from 'react'
 import { useForm } from 'react-hook-form';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { apiUrl, token } from '../../../common/Config';
 import toast from 'react-hot-toast';
 import { Accordion, AccordionBody, AccordionHeader, AccordionItem } from 'react-bootstrap';
 import UpdateChapter from './UpdateChapter';
+import CreateLesson from './CreateLesson';
+import { FaPlus, FaTrash } from 'react-icons/fa';
+import { BsPencilSquare } from 'react-icons/bs';
+import LessonSort from './LessonSort';
+import SortChapter from './SortChapters';
+import SortChapters from './SortChapters';
 
 const ManageChapter = ({course, params}) => {
+    const [loading, setLoading] = useState(false);
+  
+    //upadte Chapter Modal 
 const [chapterData, setChapterData] = useState([]);
 const [showChapter, setShowChapter] = useState(false);
-const [loading, setLoading] = useState(false);
 const handleClose = () => {
     setShowChapter(false);
 }
@@ -17,6 +25,37 @@ const handleShow = (chapter) => {
    setChapterData(chapter);
     setShowChapter(true);
 }
+
+
+    //upadte Lesson modal 
+const [showLessonModal, setShowLessonModal] = useState(false);
+const handleCloseLessonModal = () => {
+    setShowLessonModal(false);
+}
+const handleShowLessonModal = () => {
+    setShowLessonModal(true);
+}
+
+   //upadte Lesson modal 
+   const [lessonsData, setLessonsData] = useState([]);
+const [showLessonSortModal, setShowLessonSortModal] = useState(false);
+const handleCloseLessonSortModal = () => {
+    setShowLessonSortModal(false);
+}
+const handleShowLessonSortModal = (lessons) => {
+    setLessonsData(lessons);
+    setShowLessonSortModal(true);
+}
+
+  //upadte chapter modal 
+const [showChapterSortModal, setShowChapterSortModal] = useState(false);
+const handleCloseChapterSortModal = () => {
+    setShowChapterSortModal(false);
+}
+const handleShowChapterSortModal = (chapters) => {
+    setShowChapterSortModal(true);
+}
+
 
 const { register, handleSubmit, setError, formState: { errors }, reset } = useForm();
 
@@ -101,6 +140,30 @@ if(confirm('Are  you sure ?')){
 }
 }
 
+const deleteLesson = async (id) => {
+if(confirm('Are  you sure ?')){
+   await fetch(`${apiUrl}/lessons/${id}`,  {
+        method : "DELETE",
+        headers : {
+        "Content-type" :  "application/json",
+        "Accept" :  "application/json",
+        "Authorization" : `Bearer ${token}`,
+        },
+
+       })
+        .then(res =>  res.json())
+        .then(result =>  {
+            if(result.status == 200){
+                 setChapters({type: "UPDATE_CHAPTER", payload: result.chapter})
+                toast.success(result.message);
+            
+            }else{
+             console.log(result)
+               
+            }
+})
+}
+}
 
 
  useEffect( () => {
@@ -115,7 +178,14 @@ if(confirm('Are  you sure ?')){
     <>
      <div className="card">
     <div className="card-body">
+        <div className="d-flex justify-content-between">
         <h5>Chapters</h5>
+          <div>
+               <Link onClick={() => handleShowLessonModal()}><b className='text-success'><FaPlus size={12}/> Add Course</b></Link>
+           <Link onClick={() => handleShowChapterSortModal()}><b className='text-primary ms-2'><FaPlus size={12}/> Reorder Chapters</b></Link>
+          </div>
+           
+        </div>
         <form onSubmit={handleSubmit(onSubmit)} className='mb-3'>
             <div className="mb-3">
             <input
@@ -141,18 +211,64 @@ if(confirm('Are  you sure ?')){
                 {
                     chapters.map((chapter,index) => {
                 return (
-                <AccordionItem eventKey={index}>
+                <AccordionItem key={index} eventKey={index}>
                    <AccordionHeader>
                    {chapter.title}
                    </AccordionHeader>
                    <AccordionBody>
-                    <div className="d-flex">
+                    <div className="row">
+                        <div className="col-md-12">
+                 <div className='d-flex justify-content-between mb-2 mt-2'>
+                    <h5 className='fw-bold'>Lessons</h5>
+             
+                    <Link onClick={() => handleShowLessonSortModal(chapter.lessons)} data-discover="true">
+                        <strong>Reorder Lessons</strong>
+                    </Link>
+
+                       </div>
+                      </div>
+                      <div className="col-md-12">
+                        
+                    {
+                        chapter.lessons && chapter.lessons.map(lesson => {
+                            return (
+                                <div key={lesson.id} className='card shadow p-2 mb-1 rounded-0'>
+                                    <div className="row">
+                                    <div className="col-md-7">
+                                    {lesson.title}
+
+                                    </div>
+                                    <div className="col-md-5 text-md-end">
+                                        {
+                                            lesson.duration >  0 && 
+                                            <small className='fw-bold text-muted me-2'>{lesson.duration}</small>
+                                        }
+                                        {
+                                            lesson.is_free_preview == "yes" &&
+                                        <small className='badge bg-success'>Preview</small>
+                                        }
+                                        <Link to={`/account/courses/edit-lesson/${lesson.id}/${course.id}`} className='ms-2 text-primary'><BsPencilSquare/></Link>
+                                        <Link className='ms-1 text-danger' 
+                                         onClick={() => deleteLesson(lesson.id)}><FaTrash/></Link>
+                                    </div>
+                                    </div>
+                                </div>
+                            )
+                        })
+                    }
+                      </div>
+                      <div className="col-md-12 mt-2">
+                            <div className="d-flex">
                         <button className='btn btn-sm btn-info'
                          onClick={() => handleShow(chapter)}>Edit chapter</button>
-                        <button className='btn btn-sm btn-danger' 
+                        <button className='btn btn-sm py-1 btn-danger' 
                         onClick={() => deleteChapter(chapter.id)}
                         >Delete chapter</button>
                     </div>
+                      </div>
+                    </div>
+
+                   
                    </AccordionBody>
                 </AccordionItem>
                 )
@@ -167,6 +283,26 @@ if(confirm('Are  you sure ?')){
                        showChapter={showChapter} 
                        setChapters={setChapters} 
          />
+
+         <CreateLesson
+          course={course}
+          handleCloseLessonModal={handleCloseLessonModal}
+          showLessonModal={showLessonModal}
+          />
+         <LessonSort 
+         showLessonSortModal={showLessonSortModal}
+         handleCloseLessonSortModal={handleCloseLessonSortModal}
+         lessonsData={lessonsData}
+         setChapters={setChapters} 
+         />
+         <SortChapters 
+          showChapterSortModal={showChapterSortModal}
+         handleCloseChapterSortModal={handleCloseChapterSortModal}
+         course={course}
+         setChapters={setChapters} 
+         />
+
+
         </div>
         </>
   )

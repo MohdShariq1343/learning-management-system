@@ -25,7 +25,7 @@ const CreateCourse = () => {
         .then(result =>  {
             if(result.status == 200){
                 toast.success(result.message);
-                navigate(`/account/courses/${result.data.id}`);
+                navigate(`/account/courses/edit/${result.data.id}`);
             }else{
 
             }

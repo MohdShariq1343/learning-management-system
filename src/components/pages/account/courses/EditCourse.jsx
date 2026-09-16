@@ -4,7 +4,7 @@ import UserSidebar from '../../../common/UserSidebar'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { apiUrl, token } from '../../../common/Config'
-import toast from 'react-hot-toast/headless'
+import toast from 'react-hot-toast';
 import ManageOutcome from './ManageOutcome'
 import ManageRequirement from './ManageRequirement'
 import EditCover from './EditCover'
@@ -108,6 +108,31 @@ await fetch(`${apiUrl}/courses/meta-data`,  {
 })
 }
 
+const changeStatus = async (course) => {
+    const status = (course.status == 1) ? 0 : 1;
+  await fetch(`${apiUrl}/change-course-status/${course.id}`,  {
+        method : "POST",
+        headers : {
+        "Content-type" :  "application/json",
+        "Accept" :  "application/json",
+        "Authorization" : `Bearer ${token}`,
+        },
+        body : JSON.stringify({status:status})
+})
+.then(res =>  res.json())
+.then(result =>  {
+    console.log(result);
+    if(result.status == 200){
+        toast.success(result.message)
+        setCourse({...course, status: result.course.status});
+        // navigate(`/account/courses/${result.data.id}`);
+    }else{
+        toast.success('Something went wrong');
+        console.log('Something went wrong')
+    }
+})
+}
+
 useEffect(() => {
 courseMetaData();
 },[])
@@ -120,14 +145,28 @@ return (
         <ol className="breadcrumb">
             <li className="breadcrumb-item">
                 <Link to="/account">Account</Link></li>
-            <li className="breadcrumb-item active" aria-current="page">Create Course</li>
+            <li className="breadcrumb-item active" aria-current="page">Edut Course</li>
         </ol>
     </nav>
     <div className='row'>
         <div className='col-md-12 mt-5 mb-3'>
             <div className='d-flex justify-content-between'>
                 <h2 className='h4 mb-0 pb-0'>
-                        <Link to="/account/courses/create">Create Course</Link></h2>
+                        <Link to="/account/courses/create">Edit Course</Link></h2>
+                        <div>
+                            {
+                                course.status == 0  &&
+                                  <Link onClick={() => changeStatus(course)} className='btn btn-secondary'>Publish</Link>
+                            }
+                            {
+                                course.status == 1  &&
+                                  <Link onClick={() => changeStatus(course)} className='btn btn-primary'>Unpublish</Link>
+                            }
+                            <Link onClick={() => changeStatus(course)} className='btn btn-secondary'>Publish</Link>
+
+                            <Link className='btn btn-dark ms-2' to="/account/my-courses">Back</Link>
+
+                        </div>
             </div>
         </div>
         <div className='col-lg-3 account-sidebar'>
@@ -214,7 +253,7 @@ return (
                                 {
                                     languages && languages.map(language => {
                                         return  (
-                                            <option ley={language.id} value={language.id}>{language.name}</option>
+                                            <option key={language.id} value={language.id}>{language.name}</option>
                                         )
                                     })
                                 }
