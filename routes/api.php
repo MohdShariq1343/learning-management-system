@@ -26,6 +26,8 @@ Route::group(['middleware'=> ['auth:sanctum']], function(){
    Route::get('/courses/{id}', [CourseController::class, 'show']);
    Route::put('/courses/{id}', [CourseController::class, 'update']);
    Route::post('/save-course-image/{id}', [CourseController::class, 'saveCourseImage']);
+   Route::post('/change-course-status/{id}', [CourseController::class, 'change_status']);
+
    
    //outcome
    Route::get('/outcomes', [OutcomeController::class, 'index']);
@@ -46,7 +48,7 @@ Route::group(['middleware'=> ['auth:sanctum']], function(){
    Route::post('/chapters', [ChapterController::class, 'store']);
    Route::put('/chapters/{id}', [ChapterController::class, 'update']);
    Route::delete('/chapters/{id}', [ChapterController::class, 'destroy']);
-   Route::post('/sort-chapters', [ChapterController::class, 'sort_order']);
+   Route::post('/sort-chapters', [ChapterController::class, 'sort_chapters']);
 
      //Lesson
    Route::get('/lessons', [Lessoncontroller::class, 'index']);
@@ -54,5 +56,6 @@ Route::group(['middleware'=> ['auth:sanctum']], function(){
    Route::post('/lessons', [Lessoncontroller::class, 'store']);
    Route::put('/lessons/{id}', [Lessoncontroller::class, 'update']);
    Route::delete('/lessons/{id}', [Lessoncontroller::class, 'destroy']);
-   Route::post('/sort-lessons', [Lessoncontroller::class, 'sort_order']);
+   Route::post('/sort-lessons', [Lessoncontroller::class, 'sort_lessons']);
+   Route::post('/save-lesson-video/{id}', [Lessoncontroller::class, 'saveVideo']);
 });
