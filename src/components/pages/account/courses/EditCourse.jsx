@@ -145,7 +145,7 @@ return (
         <ol className="breadcrumb">
             <li className="breadcrumb-item">
                 <Link to="/account">Account</Link></li>
-            <li className="breadcrumb-item active" aria-current="page">Edut Course</li>
+            <li className="breadcrumb-item active" aria-current="page">Edit Course</li>
         </ol>
     </nav>
     <div className='row'>
@@ -162,7 +162,6 @@ return (
                                 course.status == 1  &&
                                   <Link onClick={() => changeStatus(course)} className='btn btn-primary'>Unpublish</Link>
                             }
-                            <Link onClick={() => changeStatus(course)} className='btn btn-secondary'>Publish</Link>
 
                             <Link className='btn btn-dark ms-2' to="/account/my-courses">Back</Link>
 

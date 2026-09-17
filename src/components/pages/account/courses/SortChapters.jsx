@@ -4,15 +4,15 @@ import { Modal } from 'react-bootstrap';
 import toast from 'react-hot-toast';
 import { apiUrl, token } from '../../../common/Config';
 
-const SortChapters = ({showChapterSortModal, handleCloseChapterSortModal, course, setChapters}) => {
+const SortChapters = ({showChapterSortModal, handleCloseChapterSortModal, course, setChapters, chapters}) => {
  const [chatersData, setChatersData]  = useState([]);
     // console.log(lessonData)
 
     useEffect(()  => {
-        if(course){
-            setChatersData(course.chapters)
+        if(chapters){
+            setChatersData(chapters)
         }
-    },[course]);
+    },[chapters]);
 
 const handleDragEnd = (result) => {
     if (!result.destination) return;

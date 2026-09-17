@@ -86,7 +86,7 @@ const [chapters, setChapters] = useReducer(chapterReducer,[]);
 const onSubmit = async (data) => {
     setLoading(true);
     const formData =  {...data, course_id : params.id}
-     console.log(formData);
+     //onsole.log(formData);
    await fetch(`${apiUrl}/chapters`,  {
         method : "POST",
         headers : {
@@ -288,7 +288,9 @@ if(confirm('Are  you sure ?')){
           course={course}
           handleCloseLessonModal={handleCloseLessonModal}
           showLessonModal={showLessonModal}
+          chapters={chapters}
           />
+
          <LessonSort 
          showLessonSortModal={showLessonSortModal}
          handleCloseLessonSortModal={handleCloseLessonSortModal}
@@ -300,6 +302,7 @@ if(confirm('Are  you sure ?')){
          handleCloseChapterSortModal={handleCloseChapterSortModal}
          course={course}
          setChapters={setChapters} 
+         chapters={chapters}
          />
 
 

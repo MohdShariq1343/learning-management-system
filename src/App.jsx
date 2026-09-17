@@ -1,7 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import Home from "./components/pages/Home";
-import Course from "./components/common/Course";
+// import Course from "./components/common/Course";
 import Detail from "./components/pages/Detail";
 import Login from "./components/pages/Login";
 import Register from "./components/pages/Register";
@@ -15,6 +15,7 @@ import RequireAuth from "./components/common/RequireAuth";
 import CreateCourse from "./components/pages/account/courses/CreateCourse";
 import EditCourse from "./components/pages/account/courses/EditCourse";
 import EditLesson from "./components/pages/account/courses/EditLesson";
+import Courses from "./components/pages/Courses";
 
 
 
@@ -25,7 +26,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/courses" element={<Course />} />
+          <Route path="/courses" element={<Courses />} />
           <Route path="/detail" element={<Detail />} />
           <Route path="/account/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
