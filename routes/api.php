@@ -8,15 +8,19 @@ use App\Http\Controllers\Front\OutcomeController;
 use App\Http\Controllers\Front\RequirementController;
 use App\Http\Controllers\Front\ChapterController;
 use App\Http\Controllers\Front\Lessoncontroller;
+use App\Http\Controllers\Front\HomeController;
 
+
+
+Route::get('/fetch-categories',[HomeController::class,'fetchCategories']);
+Route::get('/fetch-levels',[HomeController::class,'fetchLevels']);
+Route::get('/fetch-languages',[HomeController::class,'fetchLanguage']);
+Route::get('/fetch-featured-courses',[HomeController::class,'fetchFeaturedCourses']);
+Route::get('/fetch-courses',[HomeController::class,'courses']);
 
 Route::post('/register', [AccountController::class, 'register']);
 Route::post('/login', [AccountController::class, 'authenticate']);
 
-
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
 
 Route::group(['middleware'=> ['auth:sanctum']], function(){
    Route::get('/courses', [CourseController::class, 'index']);	
@@ -27,7 +31,9 @@ Route::group(['middleware'=> ['auth:sanctum']], function(){
    Route::put('/courses/{id}', [CourseController::class, 'update']);
    Route::post('/save-course-image/{id}', [CourseController::class, 'saveCourseImage']);
    Route::post('/change-course-status/{id}', [CourseController::class, 'change_status']);
+   Route::delete('/courses/{id}', [CourseController::class, 'destroy']);
 
+   Route::get('/my-courses', [AccountController::class, 'courses']);
    
    //outcome
    Route::get('/outcomes', [OutcomeController::class, 'index']);

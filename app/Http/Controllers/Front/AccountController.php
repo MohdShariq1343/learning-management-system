@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Front;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Course;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
@@ -68,5 +69,14 @@ class AccountController extends Controller
            
 	}
 }
+
+    public function courses(Request $request){
+        $courses = Course::where('user_id',$request->user()->id)->with('level')->get();
+
+        return response()->json([
+                'status'=> 200,
+                'courses'=> $courses,
+             ],200);
+    }
 
 }

@@ -4,6 +4,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Category;
 use App\Models\Level;
+use App\Models\Chapter;
 use App\Models\Language;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -195,7 +196,55 @@ class CourseController extends Controller
              ],200);
 
 	  }
-   
+
+	  public function destroy($id, Request $request){
+	  	$course = Course::where('id',$id)->where('user_id',$request->user()->id)->first();
+
+	  	if($course == null){
+			  	 	return response()->json([
+		         'status' =>  404,
+		         'message' =>  'Course not Found',
+			  	 ],404);
+	  	    }
+        
+        
+	  	 $chapters = Chapter::where('course_id',$course->id)->get();
+
+	  	 if(!empty($chapters)){
+	  	 	 foreach ($chapters as $chapter) {
+
+	  	 	 	$lessons = Lesson::where('chapter_id',$chapter->id)->get();
+	  	 	 	if(!empty($lessons)){
+
+	  	 	 		foreach ($lessons as $lesson) {
+	  	 	 			if($lesson->video != ""){
+							 if(File::exists(public_path('upload/course/video/'.$lesson->image))){
+								    File::delete(public_path('upload/course/video/'.$lesson->image));
+							 }
+	  	 	 		}
+	  	 	 	}
+	  	 	 }
+	  	 }
+	  }
+
+	  if($course->image != ""){
+			 if(File::exists(public_path('upload/course/small'.$course->image))){
+				    File::delete(public_path('upload/course/small'.$course->image));
+			 }
+			  if(File::exists(public_path('upload/course/'.$course->image))){
+				    File::delete(public_path('upload/course'.$course->image));
+			 }
+        }
+
+      // Note: delete realted chapter, lesson, outcome, requirement
+	  	 $course->delete();
+
+      return response()->json([
+             'status'=> 200,
+             'message'=> 'Course Deleted Successfully.',
+             ],200);
+}
+
 }
 
 
