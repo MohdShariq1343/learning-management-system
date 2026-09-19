@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Course;
 use App\Models\Level;
 use App\Models\Language;
+use App\Models\Enrollment;
 
 class HomeController extends Controller
 {
@@ -88,7 +89,7 @@ class HomeController extends Controller
             //Filter course by sort
            if(!empty($request->sort)){
              //sort comes asc or desc
-              $sortArr = ['ASC','DESC'];
+              $sortArr = ['asc','desc'];
                if(!in_array($request->sort,$sortArr)){
                  $courses = $courses->orderBy('created_at',$request->sort);
                 }else{
@@ -103,4 +104,89 @@ class HomeController extends Controller
            'data'  => $courses,
         ],200);
     }
-}
+
+
+    public function course($id){
+        $course = Course::where('id',$id)
+        ->withCount('chapters')
+          ->with(['category',
+            'level',
+            'language',
+            'chapters' => function($query){
+                 $query->withCount(['lessons' =>  function($q){
+                    $q->where('status',1);
+                    $q->whereNotNull('video');
+                }]);
+
+                 $query->withSum(['lessons' => function($q){
+                    $q->where('status',1);
+                    $q->whereNotNull('video');
+                  }],'duration');
+                },
+
+            'chapters.lessons' => function($q){
+                $q->where('status',1);
+                $q->whereNotNull('video');
+            },
+            'outcomes',
+            'requirements'])
+          ->first();
+
+        if($course == null){
+            return response()->json([
+              'status' =>  404,
+              'message'  => 'Course Not Found',
+           ],404);
+        }
+
+        $totalDuration = $course->chapters->sum('lessons_sum_duration');
+        $totallessons = $course->chapters->sum('lessons_count');
+
+        $course->total_duration =  $totalDuration;
+        $course->total_lessons =  $totallessons;
+       
+          return response()->json([
+              'status' =>  200,
+              'data'  => $course,
+           ],200);
+
+    }
+
+    public function enroll(Request $request)  {
+        $course = Course::find($request->course_id);
+
+        if($course == null){
+                return response()->json([
+                 'status' =>  404,
+                 'message' =>  'Course not Found',
+                 ],404);
+            }
+
+         $count =   Enrollment::where(['user_id'=>$request->user()->id,
+                'course_id' => $request->course_id])->count();
+
+            if($count > 0){
+                 return response()->json([
+                 'status' =>  409,
+                 'message' =>  'You Alredy Enrolled',
+                 ],409);
+            }
+
+            $enrollment = new Enrollment(); 
+             $enrollment->user_id = $request->user()->id;
+             $enrollment->course_id = $request->course_id;
+             $enrollment->save();
+                
+                return response()->json([
+                 'status' =>  200,
+                 'message' =>  'You have Successfully enrollment.',
+                 ],200);
+               
+
+            }
+
+        
+
+    }
+
+

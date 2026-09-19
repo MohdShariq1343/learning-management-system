@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Front;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Course;
+use App\Models\Enrollment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
@@ -77,6 +78,60 @@ class AccountController extends Controller
                 'status'=> 200,
                 'courses'=> $courses,
              ],200);
+    }
+
+    public function enrollments(Request $request){
+            $enrollments = Enrollment::where('user_id',$request->user()->id)
+            ->with('course','course.level')->get();
+             
+             return response()->json([
+                 'status' =>  200,
+                 'data' => $enrollments,
+                 ],200);
+
+     }
+
+    public function enroll_course_detail(Request $request, $id){
+        $count = Enrollment::where(['user_id'=> auth()->user()->id, 'course_id' =>  $id])->count();
+        
+        if($count == 0){
+             return response()->json([
+             'status' =>  404,
+             'messgae' => 'you can not access this course',
+             ],404);
+        }
+
+         $course = Course::where('id',$id)
+          ->withCount('chapters')
+          ->with([
+            'category',
+            'level',
+            'language',
+            'chapters' => function($query){
+                 $query->withCount(['lessons' =>  function($q){
+                    $q->where('status',1);
+                    $q->whereNotNull('video');
+                }]);
+
+                 $query->withSum(['lessons' => function($q){
+                    $q->where('status',1);
+                    $q->whereNotNull('video');
+                  }],'duration');
+                },
+
+            'chapters.lessons' => function($q){
+                $q->where('status',1);
+                $q->orWhereNotNull('video');
+            }
+        ])->first();
+
+       
+          return response()->json([
+              'status' =>  200,
+              'data'  => $course,
+           ],200);
+         
+
     }
 
 }

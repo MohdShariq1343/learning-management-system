@@ -1,0 +1,1784 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class CourseController extends Controller
+{
+    /**
+     * Get single course with:
+     * - Category
+     * - Level
+     * - Language
+     * - Chapters
+     * - Lessons
+     * - Outcomes
+     * - Requirements
+     * - Total lessons
+     * - Total duration
+     */
+    public function course($id)
+    {
+        /*
+        |--------------------------------------------------------------------------
+        | 1. Get Course + Category + Level + Language
+        |--------------------------------------------------------------------------
+        */
+
+        $course = DB::table('courses')
+            ->leftJoin('categories', 'categories.id', '=', 'courses.category_id')
+            ->leftJoin('levels', 'levels.id', '=', 'courses.level_id')
+            ->leftJoin('languages', 'languages.id', '=', 'courses.language_id')
+            ->where('courses.id', $id)
+            ->select(
+                'courses.*',
+
+                'categories.id as category_id',
+                'categories.name as category_name',
+
+                'levels.id as level_id',
+                'levels.name as level_name',
+
+                'languages.id as language_id',
+                'languages.name as language_name'
+            )
+            ->first();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Course Not Found
+        |--------------------------------------------------------------------------
+        */
+
+        if (!$course) {
+            return response()->json([
+                'status' => 404,
+                'message' => 'Course Not Found'
+            ], 404);
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 2. Get Chapters + Lessons
+        |--------------------------------------------------------------------------
+        |
+        | Only lessons which:
+        | status = 1
+        | video IS NOT NULL
+        |
+        */
+
+        $chapters = DB::table('chapters')
+            ->leftJoin('lessons', function ($join) {
+
+                $join->on(
+                    'lessons.chapter_id',
+                    '=',
+                    'chapters.id'
+                );
+
+                $join->where(
+                    'lessons.status',
+                    '=',
+                    1
+                );
+
+                $join->whereNotNull(
+                    'lessons.video'
+                );
+            })
+            ->where(
+                'chapters.course_id',
+                $id
+            )
+            ->select(
+                'chapters.id',
+                'chapters.course_id',
+                'chapters.title',
+                'chapters.sort_order',
+
+                DB::raw('COUNT(lessons.id) as lessons_count'),
+
+                DB::raw(
+                    'COALESCE(SUM(lessons.duration), 0) as lessons_duration'
+                )
+            )
+            ->groupBy(
+                'chapters.id',
+                'chapters.course_id',
+                'chapters.title',
+                'chapters.sort_order'
+            )
+            ->orderBy(
+                'chapters.sort_order',
+                'asc'
+            )
+            ->get();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 3. Get All Lessons For These Chapters
+        |--------------------------------------------------------------------------
+        */
+
+        $chapterIds = $chapters
+            ->pluck('id')
+            ->toArray();
+
+
+        $lessons = collect();
+
+
+        if (!empty($chapterIds)) {
+
+            $lessons = DB::table('lessons')
+                ->whereIn(
+                    'chapter_id',
+                    $chapterIds
+                )
+                ->where(
+                    'status',
+                    1
+                )
+                ->whereNotNull(
+                    'video'
+                )
+                ->select(
+                    'id',
+                    'chapter_id',
+                    'title',
+                    'video',
+                    'duration',
+                    'status'
+                )
+                ->orderBy(
+                    'id',
+                    'asc'
+                )
+                ->get();
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 4. Attach Lessons To Their Chapters
+        |--------------------------------------------------------------------------
+        */
+
+        foreach ($chapters as $chapter) {
+
+            $chapter->lessons = $lessons
+                ->where(
+                    'chapter_id',
+                    $chapter->id
+                )
+                ->values();
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 5. Calculate Total Lessons
+        |--------------------------------------------------------------------------
+        */
+
+        $totalLessons = $chapters->sum(
+            'lessons_count'
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 6. Calculate Total Duration
+        |--------------------------------------------------------------------------
+        */
+
+        $totalDuration = $chapters->sum(
+            'lessons_duration'
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 7. Get Outcomes
+        |--------------------------------------------------------------------------
+        */
+
+        $outcomes = DB::table('outcomes')
+            ->where(
+                'course_id',
+                $id
+            )
+            ->select(
+                'id',
+                'course_id',
+                'title'
+            )
+            ->orderBy(
+                'id',
+                'asc'
+            )
+            ->get();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 8. Get Requirements
+        |--------------------------------------------------------------------------
+        */
+
+        $requirements = DB::table('requirements')
+            ->where(
+                'course_id',
+                $id
+            )
+            ->select(
+                'id',
+                'course_id',
+                'title'
+            )
+            ->orderBy(
+                'id',
+                'asc'
+            )
+            ->get();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 9. Prepare Course Response
+        |--------------------------------------------------------------------------
+        */
+
+        $course->category = [
+            'id' => $course->category_id,
+            'name' => $course->category_name
+        ];
+
+        $course->level = [
+            'id' => $course->level_id,
+            'name' => $course->level_name
+        ];
+
+        $course->language = [
+            'id' => $course->language_id,
+            'name' => $course->language_name
+        ];
+
+        $course->chapters = $chapters;
+
+        $course->outcomes = $outcomes;
+
+        $course->requirements = $requirements;
+
+        $course->total_lessons = $totalLessons;
+
+        $course->total_duration = $totalDuration;
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 10. Remove Duplicate Flat Fields
+        |--------------------------------------------------------------------------
+        */
+
+        unset(
+            $course->category_id,
+            $course->category_name,
+            $course->level_id,
+            $course->level_name,
+            $course->language_id,
+            $course->language_name
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 11. Return API Response
+        |--------------------------------------------------------------------------
+        */
+
+        return response()->json([
+            'status' => 200,
+            'data' => $course
+        ], 200);
+    }
+
+
+
+    public function courses(Request $request)
+{
+    /*
+    |--------------------------------------------------------------------------
+    | Build Course Query
+    |--------------------------------------------------------------------------
+    */
+
+    $courses = Course::where('status', 1)
+        ->with('level')
+
+        // Keyword filter
+        ->when($request->keyword, function ($query) use ($request) {
+
+            $query->where(
+                'title',
+                'like',
+                '%' . $request->keyword . '%'
+            );
+        })
+
+        // Category filter
+        ->when($request->category, function ($query) use ($request) {
+
+            $query->whereIn(
+                'category_id',
+                explode(',', $request->category)
+            );
+        })
+
+        // Level filter
+        ->when($request->level, function ($query) use ($request) {
+
+            $query->whereIn(
+                'level_id',
+                explode(',', $request->level)
+            );
+        })
+
+        // Language filter
+        ->when($request->language, function ($query) use ($request) {
+
+            $query->whereIn(
+                'language_id',
+                explode(',', $request->language)
+            );
+        });
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sort
+    |--------------------------------------------------------------------------
+    */
+
+    $sort = strtolower($request->sort ?? 'desc');
+
+    // Only allow asc or desc
+    if (!in_array($sort, ['asc', 'desc'])) {
+        $sort = 'desc';
+    }
+
+    $courses->orderBy(
+        'created_at',
+        $sort
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Execute Query
+    |--------------------------------------------------------------------------
+    */
+
+    $courses = $courses->get();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Response
+    |--------------------------------------------------------------------------
+    */
+
+    return response()->json([
+        'status' => 200,
+        'data'   => $courses,
+    ], 200);
+}
+}
+
+
+==================================================================================
+
+import React, { useEffect, useState } from 'react'
+import Course from '../common/Course'
+import Layout from '../common/Layout'
+import { apiUrl } from '../common/Config'
+import { Link, useSearchParams } from 'react-router-dom'
+import Loading from '../common/Loading'
+import NotFound from '../common/NotFound'
+
+const Courses = () => {
+
+    /*
+    |--------------------------------------------------------------------------
+    | URL Search Params
+    |--------------------------------------------------------------------------
+    */
+
+    const [searchParams, setSearchParams] = useSearchParams()
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Courses / Filter States
+    |--------------------------------------------------------------------------
+    */
+
+    const [rating, setRating] = useState(4.0)
+
+    const [categories, setCategories] = useState([])
+
+    const [levels, setLevels] = useState([])
+
+    const [languages, setLanguages] = useState([])
+
+    const [courses, setCourses] = useState([])
+
+    const [keyword, setKeyword] = useState('')
+
+    const [sort, setSort] = useState('desc')
+
+    const [loading, setLoading] = useState(false)
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pagination States
+    |--------------------------------------------------------------------------
+    */
+
+    const [currentPage, setCurrentPage] = useState(
+        Number(searchParams.get('page')) || 1
+    )
+
+    const [lastPage, setLastPage] = useState(1)
+
+    const [totalCourses, setTotalCourses] = useState(0)
+
+    const [perPage] = useState(9)
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Category Checkbox
+    |--------------------------------------------------------------------------
+    */
+
+    const [categoryChecked, setCategoryChecked] = useState(() => {
+
+        const category = searchParams.get('category')
+
+        return category
+            ? category.split(',')
+            : []
+    })
+
+
+    const handleCategory = (e) => {
+
+        const {
+            checked,
+            value
+        } = e.target
+
+
+        if (checked) {
+
+            setCategoryChecked(prev => [
+                ...prev,
+                value
+            ])
+
+        } else {
+
+            setCategoryChecked(prev =>
+                prev.filter(id => id !== value)
+            )
+
+        }
+
+        /*
+        | Whenever filter changes,
+        | go back to first page.
+        */
+
+        setCurrentPage(1)
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Level Checkbox
+    |--------------------------------------------------------------------------
+    */
+
+    const [levelChecked, setLevelChecked] = useState(() => {
+
+        const level = searchParams.get('level')
+
+        return level
+            ? level.split(',')
+            : []
+    })
+
+
+    const handleLevel = (e) => {
+
+        const {
+            checked,
+            value
+        } = e.target
+
+
+        if (checked) {
+
+            setLevelChecked(prev => [
+                ...prev,
+                value
+            ])
+
+        } else {
+
+            setLevelChecked(prev =>
+                prev.filter(id => id !== value)
+            )
+
+        }
+
+        setCurrentPage(1)
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Language Checkbox
+    |--------------------------------------------------------------------------
+    */
+
+    const [languageChecked, setLanguageChecked] = useState(() => {
+
+        const language = searchParams.get('language')
+
+        return language
+            ? language.split(',')
+            : []
+    })
+
+
+    const handleLanguage = (e) => {
+
+        const {
+            checked,
+            value
+        } = e.target
+
+
+        if (checked) {
+
+            setLanguageChecked(prev => [
+                ...prev,
+                value
+            ])
+
+        } else {
+
+            setLanguageChecked(prev =>
+                prev.filter(id => id !== value)
+            )
+
+        }
+
+        setCurrentPage(1)
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fetch Courses
+    |--------------------------------------------------------------------------
+    */
+
+    const fetchCourses = () => {
+
+        setLoading(true)
+
+
+        const params = new URLSearchParams()
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Category
+        |--------------------------------------------------------------------------
+        */
+
+        if (categoryChecked.length > 0) {
+
+            params.append(
+                'category',
+                categoryChecked.join(',')
+            )
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Level
+        |--------------------------------------------------------------------------
+        */
+
+        if (levelChecked.length > 0) {
+
+            params.append(
+                'level',
+                levelChecked.join(',')
+            )
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Language
+        |--------------------------------------------------------------------------
+        */
+
+        if (languageChecked.length > 0) {
+
+            params.append(
+                'language',
+                languageChecked.join(',')
+            )
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Keyword
+        |--------------------------------------------------------------------------
+        */
+
+        if (keyword.trim().length > 0) {
+
+            params.append(
+                'keyword',
+                keyword.trim()
+            )
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Sort
+        |--------------------------------------------------------------------------
+        */
+
+        params.append(
+            'sort',
+            sort
+        )
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Pagination
+        |--------------------------------------------------------------------------
+        */
+
+        params.append(
+            'page',
+            currentPage
+        )
+
+        params.append(
+            'per_page',
+            perPage
+        )
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Update Browser URL
+        |--------------------------------------------------------------------------
+        */
+
+        setSearchParams(params)
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | API Request
+        |--------------------------------------------------------------------------
+        */
+
+        fetch(
+            `${apiUrl}/fetch-courses?${params.toString()}`,
+            {
+                method: 'GET',
+
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                }
+            }
+        )
+            .then(res => res.json())
+
+            .then(result => {
+
+                setLoading(false)
+
+
+                if (result.status === 200) {
+
+                    /*
+                    | Laravel paginate() response:
+                    |
+                    | result.data.data
+                    |
+                    */
+
+                    setCourses(
+                        result.data.data
+                    )
+
+
+                    /*
+                    | Current page
+                    */
+
+                    setCurrentPage(
+                        result.data.current_page
+                    )
+
+
+                    /*
+                    | Last page
+                    */
+
+                    setLastPage(
+                        result.data.last_page
+                    )
+
+
+                    /*
+                    | Total courses
+                    */
+
+                    setTotalCourses(
+                        result.data.total
+                    )
+
+                } else {
+
+                    setCourses([])
+
+                    setTotalCourses(0)
+
+                }
+
+            })
+
+            .catch(error => {
+
+                console.log(
+                    'Something went wrong',
+                    error
+                )
+
+                setLoading(false)
+
+                setCourses([])
+
+                setTotalCourses(0)
+
+            })
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fetch Levels
+    |--------------------------------------------------------------------------
+    */
+
+    const fetchLevels = () => {
+
+        fetch(
+            `${apiUrl}/fetch-levels`,
+            {
+                method: 'GET',
+
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                }
+            }
+        )
+
+            .then(res => res.json())
+
+            .then(result => {
+
+                if (result.status === 200) {
+
+                    setLevels(
+                        result.data
+                    )
+
+                } else {
+
+                    console.log(
+                        'Something went wrong'
+                    )
+
+                }
+
+            })
+
+            .catch(error => {
+
+                console.log(error)
+
+            })
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fetch Languages
+    |--------------------------------------------------------------------------
+    */
+
+    const fetchLanguages = () => {
+
+        fetch(
+            `${apiUrl}/fetch-languages`,
+            {
+                method: 'GET',
+
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                }
+            }
+        )
+
+            .then(res => res.json())
+
+            .then(result => {
+
+                if (result.status === 200) {
+
+                    setLanguages(
+                        result.data
+                    )
+
+                } else {
+
+                    console.log(
+                        'Something went wrong'
+                    )
+
+                }
+
+            })
+
+            .catch(error => {
+
+                console.log(error)
+
+            })
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fetch Categories
+    |--------------------------------------------------------------------------
+    */
+
+    const fetchCategories = () => {
+
+        fetch(
+            `${apiUrl}/fetch-categories`,
+            {
+                method: 'GET',
+
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                }
+            }
+        )
+
+            .then(res => res.json())
+
+            .then(result => {
+
+                if (result.status === 200) {
+
+                    setCategories(
+                        result.data
+                    )
+
+                } else {
+
+                    console.log(
+                        'Something went wrong'
+                    )
+
+                }
+
+            })
+
+            .catch(error => {
+
+                console.log(error)
+
+            })
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Clear Filters
+    |--------------------------------------------------------------------------
+    */
+
+    const clearFilters = () => {
+
+        setCategoryChecked([])
+
+        setLevelChecked([])
+
+        setLanguageChecked([])
+
+        setKeyword('')
+
+        setSort('desc')
+
+        setCurrentPage(1)
+
+        /*
+        | Remove checked state from checkboxes
+        */
+
+        document
+            .querySelectorAll('.form-check-input')
+            .forEach(element => {
+                element.checked = false
+            })
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Change Page
+    |--------------------------------------------------------------------------
+    */
+
+    const changePage = (page) => {
+
+        if (page < 1) {
+            return
+        }
+
+        if (page > lastPage) {
+            return
+        }
+
+        setCurrentPage(page)
+
+        /*
+        | Scroll to courses section
+        */
+
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        })
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | useEffect
+    |--------------------------------------------------------------------------
+    */
+
+    useEffect(() => {
+
+        fetchCourses()
+
+    }, [
+        categoryChecked,
+        levelChecked,
+        languageChecked,
+        keyword,
+        sort,
+        currentPage
+    ])
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Load Categories / Levels / Languages
+    |--------------------------------------------------------------------------
+    */
+
+    useEffect(() => {
+
+        fetchCategories()
+
+        fetchLevels()
+
+        fetchLanguages()
+
+    }, [])
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pagination Number Helper
+    |--------------------------------------------------------------------------
+    */
+
+    const getPaginationPages = () => {
+
+        const pages = []
+
+        for (
+            let page = 1;
+            page <= lastPage;
+            page++
+        ) {
+
+            pages.push(page)
+        }
+
+        return pages
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | JSX
+    |--------------------------------------------------------------------------
+    */
+
+    return (
+
+        <Layout>
+
+            <div className="container pb-5 pt-3">
+
+
+                {/* Breadcrumb */}
+
+                <nav aria-label="breadcrumb">
+
+                    <ol className="breadcrumb">
+
+                        <li className="breadcrumb-item">
+
+                            <Link to="/">
+                                Home
+                            </Link>
+
+                        </li>
+
+                        <li
+                            className="breadcrumb-item active"
+                            aria-current="page"
+                        >
+                            Courses
+                        </li>
+
+                    </ol>
+
+                </nav>
+
+
+                <div className="row">
+
+
+                    {/* ======================================================
+                        SIDEBAR
+                    ====================================================== */}
+
+                    <div className="col-lg-3">
+
+                        <div className="sidebar mb-5 card border-0">
+
+                            <div className="card-body shadow">
+
+
+                                {/* Search */}
+
+                                <div className="mb-3 input-group">
+
+                                    <input
+                                        value={keyword}
+
+                                        onChange={(e) => {
+
+                                            setKeyword(
+                                                e.target.value
+                                            )
+
+                                            setCurrentPage(1)
+                                        }}
+
+                                        type="text"
+
+                                        className="form-control"
+
+                                        placeholder="Search by keyword"
+                                    />
+
+                                    <button
+                                        type="button"
+                                        className="btn btn-sm btn-success"
+                                        onClick={() => {
+                                            setCurrentPage(1)
+                                        }}
+                                    >
+                                        Search
+                                    </button>
+
+                                </div>
+
+
+                                {/* ==================================================
+                                    CATEGORY
+                                ================================================== */}
+
+                                <div className="pt-3">
+
+                                    <h3 className="h5 mb-2">
+                                        Category
+                                    </h3>
+
+                                    <ul>
+
+                                        {
+                                            categories &&
+                                            categories.map(category => (
+
+                                                <li
+                                                    key={category.id}
+                                                >
+
+                                                    <div className="form-check">
+
+                                                        <input
+
+                                                            checked={
+                                                                categoryChecked.includes(
+                                                                    String(category.id)
+                                                                )
+                                                            }
+
+                                                            className="form-check-input"
+
+                                                            type="checkbox"
+
+                                                            value={category.id}
+
+                                                            onChange={
+                                                                handleCategory
+                                                            }
+
+                                                            id={`category-${category.id}`}
+                                                        />
+
+                                                        <label
+                                                            className="form-check-label"
+
+                                                            htmlFor={`category-${category.id}`}
+                                                        >
+                                                            {category.name}
+                                                        </label>
+
+                                                    </div>
+
+                                                </li>
+
+                                            ))
+                                        }
+
+                                    </ul>
+
+                                </div>
+
+
+                                {/* ==================================================
+                                    LEVEL
+                                ================================================== */}
+
+                                <div className="mb-3">
+
+                                    <h3 className="h5 mb-2">
+                                        Level
+                                    </h3>
+
+                                    <ul>
+
+                                        {
+                                            levels &&
+                                            levels.map(level => (
+
+                                                <li
+                                                    key={level.id}
+                                                >
+
+                                                    <div className="form-check">
+
+                                                        <input
+
+                                                            checked={
+                                                                levelChecked.includes(
+                                                                    String(level.id)
+                                                                )
+                                                            }
+
+                                                            className="form-check-input"
+
+                                                            type="checkbox"
+
+                                                            value={level.id}
+
+                                                            onChange={
+                                                                handleLevel
+                                                            }
+
+                                                            id={`level-${level.id}`}
+                                                        />
+
+                                                        <label
+                                                            className="form-check-label"
+
+                                                            htmlFor={`level-${level.id}`}
+                                                        >
+                                                            {level.name}
+                                                        </label>
+
+                                                    </div>
+
+                                                </li>
+
+                                            ))
+                                        }
+
+                                    </ul>
+
+                                </div>
+
+
+                                {/* ==================================================
+                                    LANGUAGE
+                                ================================================== */}
+
+                                <div className="mb-3">
+
+                                    <h3 className="h5 mb-2">
+                                        Language
+                                    </h3>
+
+                                    <ul>
+
+                                        {
+                                            languages &&
+                                            languages.map(language => (
+
+                                                <li
+                                                    key={language.id}
+                                                >
+
+                                                    <div className="form-check">
+
+                                                        <input
+
+                                                            checked={
+                                                                languageChecked.includes(
+                                                                    String(language.id)
+                                                                )
+                                                            }
+
+                                                            className="form-check-input"
+
+                                                            type="checkbox"
+
+                                                            value={language.id}
+
+                                                            onChange={
+                                                                handleLanguage
+                                                            }
+
+                                                            id={`language-${language.id}`}
+                                                        />
+
+                                                        <label
+                                                            className="form-check-label"
+
+                                                            htmlFor={`language-${language.id}`}
+                                                        >
+                                                            {language.name}
+                                                        </label>
+
+                                                    </div>
+
+                                                </li>
+
+                                            ))
+                                        }
+
+                                    </ul>
+
+                                </div>
+
+
+                                {/* Clear Filters */}
+
+                                <button
+                                    type="button"
+                                    className="btn btn-link p-0 clear-filter"
+                                    onClick={clearFilters}
+                                >
+                                    Clear All Filters
+                                </button>
+
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    {/* ======================================================
+                        COURSES
+                    ====================================================== */}
+
+                    <div className="col-lg-9">
+
+                        <section className="section-3">
+
+
+                            {/* Header */}
+
+                            <div className="d-flex justify-content-between mb-3 align-items-center">
+
+
+                                {/* Total */}
+
+                                <div className="h5 mb-0">
+
+                                    {
+                                        !loading &&
+                                        `${totalCourses} courses found`
+                                    }
+
+                                </div>
+
+
+                                {/* Sort */}
+
+                                <div>
+
+                                    <select
+
+                                        value={sort}
+
+                                        onChange={(e) => {
+
+                                            setSort(
+                                                e.target.value
+                                            )
+
+                                            setCurrentPage(1)
+                                        }}
+
+                                        className="form-select"
+                                    >
+
+                                        <option value="desc">
+                                            Newest First
+                                        </option>
+
+                                        <option value="asc">
+                                            Oldest First
+                                        </option>
+
+                                    </select>
+
+                                </div>
+
+                            </div>
+
+
+                            {/* ==================================================
+                                COURSE LIST
+                            ================================================== */}
+
+                            <div className="row gy-4">
+
+
+                                {/* Loading */}
+
+                                {
+                                    loading && (
+                                        <Loading />
+                                    )
+                                }
+
+
+                                {/* No Courses */}
+
+                                {
+                                    !loading &&
+                                    courses.length === 0 && (
+                                        <NotFound />
+                                    )
+                                }
+
+
+                                {/* Courses */}
+
+                                {
+                                    !loading &&
+                                    courses.length > 0 &&
+                                    courses.map(course => (
+
+                                        <Course
+
+                                            key={course.id}
+
+                                            course={course}
+
+                                            customClasses="col-lg-4 col-md-6"
+
+                                        />
+
+                                    ))
+                                }
+
+
+                            </div>
+
+
+                            {/* ==================================================
+                                PAGINATION
+                            ================================================== */}
+
+                            {
+                                !loading &&
+                                lastPage > 1 && (
+
+                                    <nav
+                                        className="mt-5"
+                                        aria-label="Course pagination"
+                                    >
+
+                                        <ul className="pagination justify-content-center">
+
+
+                                            {/* Previous */}
+
+                                            <li
+                                                className={`page-item ${
+                                                    currentPage === 1
+                                                        ? 'disabled'
+                                                        : ''
+                                                }`}
+                                            >
+
+                                                <button
+
+                                                    type="button"
+
+                                                    className="page-link"
+
+                                                    disabled={
+                                                        currentPage === 1
+                                                    }
+
+                                                    onClick={() =>
+                                                        changePage(
+                                                            currentPage - 1
+                                                        )
+                                                    }
+                                                >
+                                                    Previous
+                                                </button>
+
+                                            </li>
+
+
+                                            {/* Page Numbers */}
+
+                                            {
+                                                getPaginationPages().map(
+                                                    page => (
+
+                                                        <li
+
+                                                            key={page}
+
+                                                            className={`page-item ${
+                                                                currentPage === page
+                                                                    ? 'active'
+                                                                    : ''
+                                                            }`}
+                                                        >
+
+                                                            <button
+
+                                                                type="button"
+
+                                                                className="page-link"
+
+                                                                onClick={() =>
+                                                                    changePage(
+                                                                        page
+                                                                    )
+                                                                }
+                                                            >
+                                                                {page}
+                                                            </button>
+
+                                                        </li>
+
+                                                    )
+                                                )
+                                            }
+
+
+                                            {/* Next */}
+
+                                            <li
+
+                                                className={`page-item ${
+                                                    currentPage === lastPage
+                                                        ? 'disabled'
+                                                        : ''
+                                                }`}
+                                            >
+
+                                                <button
+
+                                                    type="button"
+
+                                                    className="page-link"
+
+                                                    disabled={
+                                                        currentPage === lastPage
+                                                    }
+
+                                                    onClick={() =>
+                                                        changePage(
+                                                            currentPage + 1
+                                                        )
+                                                    }
+                                                >
+                                                    Next
+                                                </button>
+
+                                            </li>
+
+
+                                        </ul>
+
+                                    </nav>
+
+                                )
+                            }
+
+
+                        </section>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </Layout>
+    )
+}
+
+export default Courses
+
+
+
+====================================================================================
+
+pagination
+
+
+======================================================================================================
+
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Course;
+use Illuminate\Http\Request;
+
+class CourseController extends Controller
+{
+    public function courses(Request $request)
+    {
+        /*
+        |--------------------------------------------------------------------------
+        | Validate Request
+        |--------------------------------------------------------------------------
+        */
+
+        $request->validate([
+            'keyword'  => 'nullable|string',
+            'category' => 'nullable|string',
+            'level'    => 'nullable|string',
+            'language' => 'nullable|string',
+            'sort'     => 'nullable|in:asc,desc',
+            'page'     => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|min:1|max:50',
+        ]);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Course Query
+        |--------------------------------------------------------------------------
+        */
+
+        $courses = Course::where('status', 1)
+            ->with('level')
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Keyword Filter
+            |--------------------------------------------------------------------------
+            */
+
+            ->when($request->keyword, function ($query) use ($request) {
+
+                $query->where(
+                    'title',
+                    'like',
+                    '%' . $request->keyword . '%'
+                );
+            })
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Category Filter
+            |--------------------------------------------------------------------------
+            */
+
+            ->when($request->category, function ($query) use ($request) {
+
+                $categoryArr = explode(
+                    ',',
+                    $request->category
+                );
+
+                $query->whereIn(
+                    'category_id',
+                    $categoryArr
+                );
+            })
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Level Filter
+            |--------------------------------------------------------------------------
+            */
+
+            ->when($request->level, function ($query) use ($request) {
+
+                $levelArr = explode(
+                    ',',
+                    $request->level
+                );
+
+                $query->whereIn(
+                    'level_id',
+                    $levelArr
+                );
+            })
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Language Filter
+            |--------------------------------------------------------------------------
+            */
+
+            ->when($request->language, function ($query) use ($request) {
+
+                $languageArr = explode(
+                    ',',
+                    $request->language
+                );
+
+                $query->whereIn(
+                    'language_id',
+                    $languageArr
+                );
+            });
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Sorting
+        |--------------------------------------------------------------------------
+        */
+
+        $sort = strtolower(
+            $request->sort ?? 'desc'
+        );
+
+        if (!in_array($sort, ['asc', 'desc'])) {
+            $sort = 'desc';
+        }
+
+        $courses->orderBy(
+            'created_at',
+            $sort
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Pagination
+        |--------------------------------------------------------------------------
+        */
+
+        $perPage = $request->per_page ?? 9;
+
+        $courses = $courses->paginate(
+            $perPage
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | API Response
+        |--------------------------------------------------------------------------
+        */
+
+        return response()->json([
+            'status' => 200,
+            'data'   => $courses,
+        ], 200);
+    }
+}

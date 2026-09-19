@@ -17,6 +17,7 @@ Route::get('/fetch-levels',[HomeController::class,'fetchLevels']);
 Route::get('/fetch-languages',[HomeController::class,'fetchLanguage']);
 Route::get('/fetch-featured-courses',[HomeController::class,'fetchFeaturedCourses']);
 Route::get('/fetch-courses',[HomeController::class,'courses']);
+Route::get('/fetch-course/{id}',[HomeController::class,'course']);
 
 Route::post('/register', [AccountController::class, 'register']);
 Route::post('/login', [AccountController::class, 'authenticate']);
@@ -33,7 +34,7 @@ Route::group(['middleware'=> ['auth:sanctum']], function(){
    Route::post('/change-course-status/{id}', [CourseController::class, 'change_status']);
    Route::delete('/courses/{id}', [CourseController::class, 'destroy']);
 
-   Route::get('/my-courses', [AccountController::class, 'courses']);
+   
    
    //outcome
    Route::get('/outcomes', [OutcomeController::class, 'index']);
@@ -64,4 +65,10 @@ Route::group(['middleware'=> ['auth:sanctum']], function(){
    Route::delete('/lessons/{id}', [Lessoncontroller::class, 'destroy']);
    Route::post('/sort-lessons', [Lessoncontroller::class, 'sort_lessons']);
    Route::post('/save-lesson-video/{id}', [Lessoncontroller::class, 'saveVideo']);
+
+  //frontend
+   Route::get('/my-courses', [AccountController::class, 'courses']);
+   Route::get('/enrollments', [AccountController::class, 'enrollments']);
+   Route::post('/enroll-course', [HomeController::class, 'enroll']);
+   Route::get('/enroll/{id}', [AccountController::class, 'enroll_course_detail']);
 });
