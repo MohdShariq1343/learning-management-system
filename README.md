@@ -7,8 +7,6 @@ learning-management-system/
 🚀 Features
 Authentication & Authorization: Token-based / Stateful SPA authentication using Laravel Sanctum.
 
-Role-Based Access Control (RBAC): Defined roles for Admins, Instructors, and Students.
-
 Course & Lesson Management: Create, publish, update, and manage structured learning modules.
 
 Decoupled Architecture: Independent React client consuming JSON endpoints provided by Laravel.
@@ -16,8 +14,6 @@ Decoupled Architecture: Independent React client consuming JSON endpoints provid
 🛠️ Tech Stack
 Frontend
 Framework: React.js
-
-HTTP Client: Axios
 
 Routing: React Router DOM
 
