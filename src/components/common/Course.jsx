@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 
 const Course = ({course,customClasses}) => {
   return (
@@ -57,7 +58,7 @@ const Course = ({course,customClasses}) => {
                     }
                     
                     <div className="add-to-cart">
-                        <a href="/detail" className="btn btn-primary" >Read More</a>
+                      <Link to={`/detail/${course.id}`} className="btn btn-primary">Read More</Link>
                     </div>
                 </div>
             </div>

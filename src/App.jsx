@@ -27,7 +27,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/courses" element={<Courses />} />
-          <Route path="/detail" element={<Detail />} />
+          <Route path="/detail/:id" element={<Detail />} />
           <Route path="/account/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
@@ -44,11 +44,16 @@ function App() {
          <RequireAuth> <EditLesson/> </RequireAuth>
        } />
 
-      
-          <Route path="/account/my-learning" element={<MyLearning />} />
+
+          <Route path="/account/my-learning" element={
+            <RequireAuth><MyLearning /></RequireAuth>
+            } />
+          <Route path="/account/watch-course/:id" element={
+               <RequireAuth><WatchCourse/></RequireAuth>
+          } />
           <Route path="/account/my-courses" element={<MyCourses />} />
           <Route path="/account/course-enrolled" element={<MyLearning/>} />
-          <Route path="/account/watch-course" element={<WatchCourse />} />
+
           <Route path="/account/change-password" element={<ChangePassword />} />
           {/* <Route path="/account/my-courses/view" element={<View />} />
           <Route path="/account/my-courses/create" element={<CreateCourse />} /> */}
